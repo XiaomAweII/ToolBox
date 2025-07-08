@@ -101,15 +101,16 @@ public class PdfService {
         }
     }
 
-    // 在PdfService.java中添加以下方法
-    public byte[] mergePdfs(MultipartFile[] files) throws IOException {
+    public byte[] mergePdfs(List<MultipartFile> files) throws IOException {
+        List<PDDocument> sourceDocs = new ArrayList<>();
         try (PDDocument mergedDoc = new PDDocument()) {
+            // 加载所有源PDF文档，保持打开状态
             for (MultipartFile file : files) {
                 if (!file.isEmpty()) {
-                    try (PDDocument doc = PDDocument.load(file.getInputStream())) {
-                        for (PDPage page : doc.getPages()) {
-                            mergedDoc.addPage(new PDPage(page.getCOSObject()));
-                        }
+                    PDDocument doc = PDDocument.load(file.getInputStream());
+                    sourceDocs.add(doc);
+                    for (PDPage page : doc.getPages()) {
+                        mergedDoc.importPage(page);
                     }
                 }
             }
@@ -117,6 +118,29 @@ public class PdfService {
             try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
                 mergedDoc.save(baos);
                 return baos.toByteArray();
+            }
+        } finally {
+            // 合并完成后关闭所有源文档，避免COSStream提前关闭
+            for (PDDocument doc : sourceDocs) {
+                if (doc != null) {
+                    doc.close();
+                }
+            }
+        }
+    }
+
+    private void importPages(PDDocument srcDoc, PDDocument targetDoc) throws IOException {
+        // 创建临时文档保存页面副本
+        try (PDDocument tempDoc = new PDDocument()) {
+            // 复制所有页面到临时文档
+            for (PDPage page : srcDoc.getPages()) {
+                PDPage newPage = new PDPage(page.getCOSObject());
+                tempDoc.addPage(newPage);
+            }
+
+            // 从临时文档导入到目标文档
+            for (PDPage page : tempDoc.getPages()) {
+                targetDoc.importPage(page);
             }
         }
     }
