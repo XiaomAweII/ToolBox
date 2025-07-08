@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>ZIP压缩包拆分工具</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .progress {
+            margin-top: 20px;
+            height: 25px;
+        }
+        .progress-bar {
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+<div class="container mt-5">
+    <h1 class="text-center mb-4">ZIP压缩包拆分工具</h1>
+
+    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+    <form method="post" action="/zip/split" enctype="multipart/form-data" id="splitForm">
+        <div class="mb-3">
+            <label for="zipFile" class="form-label">选择ZIP文件:</label>
+            <input type="file" class="form-control" id="zipFile" name="file" accept=".zip" required>
+            <div class="form-text">最大支持500MB的ZIP文件</div>
+        </div>
+
+        <div class="mb-3">
+            <label for="maxSize" class="form-label">每个分卷最大大小(MB):</label>
+            <input type="number" class="form-control" id="maxSize" name="maxSizeMB"
+                   min="10" max="500" value="50" required>
+            <div class="form-text">建议值50-100MB</div>
+        </div>
+
+        <div class="progress d-none" id="progressBar">
+            <div class="progress-bar progress-bar-striped progress-bar-animated"
+                 role="progressbar" style="width: 0%"></div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="splitBtn">拆分ZIP</button>
+        <a href="/" class="btn btn-secondary ms-2">返回首页</a>
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('splitForm');
+        const progressBar = document.getElementById('progressBar');
+        const progress = progressBar.querySelector('.progress-bar');
+
+        form.addEventListener('submit', function(e) {
+            const fileInput = document.getElementById('zipFile');
+            if (fileInput.files.length === 0) {
+                e.preventDefault();
+                alert('请选择ZIP文件');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            if (file.size > 500 * 1024 * 1024) {
+                e.preventDefault();
+                alert('文件过大，最大支持500MB');
+                return;
+            }
+
+            // 显示进度条
+            progressBar.classList.remove('d-none');
+            progress.style.width = '0%';
+
+            // 模拟进度更新（实际进度需要后端支持）
+            const interval = setInterval(() => {
+                const current = parseInt(progress.style.width) || 0;
+                if (current < 90) {
+                    progress.style.width = (current + 5) + '%';
+                }
+            }, 500);
+
+            // 表单提交完成后清除定时器
+            form.addEventListener('ajax:complete', function() {
+                clearInterval(interval);
+                progress.style.width = '100%';
+                setTimeout(() => progressBar.classList.add('d-none'), 1000);
+            });
+        });
+    });
+</script>
+</body>
+</html>
