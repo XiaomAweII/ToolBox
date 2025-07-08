@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>JSON格式化工具</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+    <style>
+        #jsonInput {
+            font-family: monospace;
+            white-space: pre;
+            tab-size: 4;
+        }
+
+        #formattedResult {
+            position: relative;
+        }
+
+        #copyBtn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="container mt-5">
+    <h1 class="text-center mb-4">JSON格式化工具</h1>
+
+    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+    <form method="post" action="/json/format" id="jsonForm">
+        <div class="mb-3">
+            <label for="jsonInput" class="form-label">输入JSON:</label>
+            <textarea class="form-control" id="jsonInput" name="jsonInput" rows="10"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary" id="formatBtn">格式化</button>
+        <button type="button" class="btn btn-warning ms-2" id="clearBtn">清空</button>
+    </form>
+
+    <div th:if="${formattedJson}" class="mt-4" id="formattedResult">
+        <h4>格式化结果:</h4>
+        <button id="copyBtn" class="btn btn-sm btn-success">复制</button>
+        <pre class="bg-light p-3 rounded"><code class="language-json" id="formattedJson"
+                                                th:text="${formattedJson}"></code></pre>
+    </div>
+
+    <div class="mt-4">
+        <a href="/" class="btn btn-secondary">返回首页</a>
+    </div>
+</div>
+
+<script>
+    // 初始化
+    document.addEventListener('DOMContentLoaded', function () {
+        const textarea = document.getElementById('jsonInput');
+        const formatBtn = document.getElementById('formatBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const defaultValue = '{"example":"value"}';
+
+        // 设置初始值（仅在第一次加载时）
+        if (!textarea.value.trim()) {
+            textarea.value = defaultValue;
+        }
+
+        // 防止格式化按钮触发刷新确认
+        formatBtn.addEventListener('click', function (e) {
+            // 验证输入是否为空
+            if (!textarea.value.trim()) {
+                e.preventDefault();
+                alert('请输入JSON内容');
+                return;
+            }
+            // 保存当前输入内容到sessionStorage
+            sessionStorage.setItem('lastJsonInput', textarea.value);
+            window.shouldConfirmOnUnload = false;
+        });
+
+        // 清空按钮功能
+        clearBtn.addEventListener('click', function () {
+            if (confirm('确定要清空当前输入的内容吗？')) {
+                textarea.value = '';
+                sessionStorage.removeItem('lastJsonInput');
+            }
+        });
+
+        // 复制按钮功能
+        if (copyBtn) {
+            copyBtn.addEventListener('click', function () {
+                const formattedJson = document.getElementById('formattedJson');
+                if (formattedJson) {
+                    const range = document.createRange();
+                    range.selectNode(formattedJson);
+                    window.getSelection().removeAllRanges();
+                    window.getSelection().addRange(range);
+                    document.execCommand('copy');
+                    window.getSelection().removeAllRanges();
+
+                    // 显示复制成功反馈
+                    const originalText = copyBtn.textContent;
+                    copyBtn.textContent = '已复制!';
+                    setTimeout(() => {
+                        copyBtn.textContent = originalText;
+                    }, 2000);
+                }
+            });
+        }
+
+        // 恢复上次输入的内容
+        const lastInput = sessionStorage.getItem('lastJsonInput');
+        if (lastInput) {
+            textarea.value = lastInput;
+        }
+
+        // 移除beforeunload事件监听器，不再清空输入框
+    });
+
+    // 自动修复简单JSON格式问题
+    function tryFixJson(jsonStr) {
+        // 尝试自动修复缺少大括号的情况
+        if (!jsonStr.trim().startsWith('{') && !jsonStr.trim().endsWith('}')) {
+            return '{' + jsonStr + '}';
+        } else if (!jsonStr.trim().startsWith('{')) {
+            return '{' + jsonStr;
+        } else if (!jsonStr.trim().endsWith('}')) {
+            return jsonStr + '}';
+        }
+        return jsonStr;
+    }
+</script>
+</body>
+</html>

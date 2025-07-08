@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>PDF拆分工具</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container mt-5">
+    <h1 class="text-center mb-4">PDF拆分工具</h1>
+
+    <form method="post" action="/pdf/split" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label for="file" class="form-label">选择PDF文件:</label>
+            <input class="form-control" type="file" id="file" name="file" accept=".pdf" required>
+        </div>
+        <div class="mb-3">
+            <label for="maxSizeMB" class="form-label">最大文件大小(MB):</label>
+            <input type="number" class="form-control" id="maxSizeMB" name="maxSizeMB" value="50" min="1" required>
+        </div>
+        <button type="submit" class="btn btn-primary">拆分PDF</button>
+    </form>
+
+    <div class="mt-4">
+        <a href="/" class="btn btn-secondary">返回首页</a>
+    </div>
+</div>
+</body>
+</html>
